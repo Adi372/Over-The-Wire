@@ -1,39 +1,84 @@
-# Bandit Level 18 → 19
+# Bandit Level 18 → Level 19
 
-## Level Goal
+## Challenge Information
 
-The password for the next level is stored in a file named `readme` in the home directory. However, the `.bashrc` file has been modified to log users out immediately after SSH login.
+- **Platform:** OverTheWire Bandit
+- **Category:** Linux, SSH, Remote Command Execution
+- **Difficulty:** Beginner
+- **Tools Used:** `ssh`, `cat`
+- **Objective:** Retrieve the password for `bandit19` from the `readme` file despite the modified shell configuration that immediately terminates normal SSH sessions.
 
-## Commands Used
+## 1. Challenge Description
+
+The password for the next level is stored in a file named `readme` in the home directory.
+
+However, the `.bashrc` file has been modified so that a normal SSH login displays a message and immediately closes the session. This prevents the user from accessing a regular interactive shell.
+
+The solution is to execute a command directly through SSH without opening an interactive shell.
+
+## 2. Attempting a Normal SSH Login
+
+I first tried connecting to `bandit18` normally:
 
 ```bash
 ssh -p 2220 bandit18@bandit.labs.overthewire.org
+```
+
+The connection displayed:
+
+```text
+Byebye!
+```
+
+The session then terminated.
+
+This indicated that the account's shell configuration was interfering with normal interactive access.
+
+## 3. Executing a Remote Command
+
+Instead of opening an interactive shell, I supplied the command directly after the SSH destination:
+
+```bash
 ssh -p 2220 bandit18@bandit.labs.overthewire.org cat readme
+```
+
+### Command breakdown
+
+- `ssh` establishes a secure connection to the remote server.
+- `-p 2220` specifies the SSH port.
+- `bandit18@bandit.labs.overthewire.org` identifies the remote account and host.
+- `cat readme` is the command executed on the remote machine.
+
+SSH sends the command to the remote system for execution. The output of `cat readme` is returned to my terminal without requiring a normal interactive shell.
+
+The command displayed the password for `bandit19`. I kept the actual password out of this write-up.
+
+## 4. Logging In to bandit19
+
+After retrieving the password, I connected to the next account:
+
+```bash
 ssh -p 2220 bandit19@bandit.labs.overthewire.org
 ```
 
-## Steps
+I entered the password obtained from `readme` when prompted.
 
-1. Tried logging in to Bandit Level 18 normally using SSH.
-2. The connection displayed `Byebye!` and closed immediately.
-3. Used SSH to execute `cat readme` directly on the remote server without opening an interactive shell.
-4. Retrieved the password for Bandit Level 19 from the `readme` file.
-5. Connected to Bandit Level 19 using the retrieved password.
+## 5. Key Learnings
 
-## Key Learning
+- **`ssh`:** Establishes a secure connection to a remote machine.
+- **`-p 2220`:** Specifies the port used by the SSH server.
+- **`cat readme`:** Displays the contents of the `readme` file.
+- **Remote command execution:** SSH can execute a specified command remotely without starting a normal interactive shell.
+- **`.bashrc`:** A Bash configuration file that can execute commands when an interactive non-login Bash shell starts.
+- **Interactive vs. non-interactive execution:** A remote command can sometimes succeed even when an interactive login session is restricted.
 
-- **`ssh`** securely connects to a remote machine.
-- **`-p 2220`** specifies the SSH port.
-- **`cat readme`** displays the contents of the `readme` file.
-- **Remote command execution:** You can provide a command after the SSH destination to execute it remotely without starting an interactive shell.
-- **`.bashrc`** is a shell configuration file that can run commands when Bash starts. A modified configuration can interfere with normal login sessions.
+**Important distinction:** `.bashrc` normally configures interactive Bash shells. In this challenge, the modified configuration causes the immediate logout behavior; it is not a general rule that `.bashrc` always runs for every SSH command.
 
-## Next Level Login
+## 6. References
 
-- Username: `bandit19`
-- SSH host: `bandit.labs.overthewire.org`
-- Port: `2220`
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [`ssh` manual](https://man7.org/linux/man-pages/man1/ssh.1.html)
+- [`cat` manual](https://man7.org/linux/man-pages/man1/cat.1.html)
+- [GNU Bash Startup Files](https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html)
 
-## Note
-
-The key to this level was executing a command directly through SSH instead of opening a normal interactive shell. Avoid publishing passwords in public repositories.
+**Security note:** Never publish actual passwords or private SSH keys in a public repository.

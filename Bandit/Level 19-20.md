@@ -1,51 +1,140 @@
-# Bandit Level 19 → 20
+# Bandit Level 19 → Level 20
 
-## Level Goal
+## Challenge Information
 
-Use the setuid binary in the home directory to execute commands with the permissions of another user. After using the binary, retrieve the next password from `/etc/bandit_pass`.
+- **Platform:** OverTheWire Bandit
+- **Category:** Linux, File Permissions, Privilege Escalation
+- **Difficulty:** Beginner
+- **Tools Used:** `ls`, `file`, `whoami`, `cat`
+- **Objective:** Use the provided setuid executable to run a command with `bandit20` privileges and retrieve the password for the next level.
 
-## Commands Used
+## 1. Challenge Description
+
+The home directory contains an executable named `bandit20-do`. The challenge requires using this program to execute commands with the effective user ID of its owner.
+
+This provides a way to read the password file for `bandit20` without logging in as that user first.
+
+## 2. Initial Enumeration
+
+I listed the files in the home directory:
 
 ```bash
 ls
+```
+
+The output showed the `bandit20-do` executable.
+
+I then checked its file type:
+
+```bash
 file bandit20-do
+```
+
+The output identified it as an ELF executable.
+
+Next, I inspected its permissions and ownership:
+
+```bash
 ls -l
+```
+
+The permissions included:
+
+```text
+-rwsr-x---
+```
+
+The `s` in the owner's permission section indicates that the setuid bit is enabled alongside the owner's execute permission.
+
+## 3. Understanding the Setuid Binary
+
+**Setuid** stands for *set user ID*. When an executable has the setuid bit enabled, it can run with the effective user ID of the file's owner, subject to system rules.
+
+I executed the binary without arguments to understand how to use it:
+
+```bash
 ./bandit20-do
+```
+
+The program displayed usage instructions indicating that it accepts a command to execute.
+
+The `./` prefix tells Linux to run the executable located in the current directory.
+
+## 4. Verifying the Effective User
+
+To check which user identity the program uses when executing a command, I ran:
+
+```bash
 ./bandit20-do whoami
+```
+
+The output was:
+
+```text
+bandit20
+```
+
+This confirmed that the command was executed with `bandit20` as its effective user identity.
+
+This matters because access to protected files is checked against the process's effective credentials, not simply the username shown in the original login session.
+
+## 5. Troubleshooting Incorrect Commands
+
+I also tried the following commands:
+
+```bash
 ./bandit20-do ls
 ./bandit20-do cat /etc/bandit_pass/
 ./bandit20-do cd /etc/bandit_pass/
+```
+
+These attempts helped clarify how the executable works.
+
+- `./bandit20-do ls` runs `ls`, which lists the current directory.
+- `./bandit20-do cat /etc/bandit_pass/` attempts to read a directory as though it were a regular file. `cat` cannot display a directory's contents this way.
+- `./bandit20-do cd /etc/bandit_pass/` does not work because `cd` is a shell built-in, not a standalone executable that the program can run directly.
+
+To list the password directory, a command such as `./bandit20-do ls /etc/bandit_pass/` would be more appropriate. However, listing the directory is unnecessary when the exact password file path is already known.
+
+## 6. Retrieving the Next Password
+
+I ran the following command:
+
+```bash
 ./bandit20-do cat /etc/bandit_pass/bandit20
 ```
 
-## Steps
+The executable launched `cat` with the effective privileges provided by the setuid program. This allowed it to read the password file for `bandit20`.
 
-1. Used `ls` to find the `bandit20-do` executable in the home directory.
-2. Used `file bandit20-do` to identify the file as a setuid ELF executable.
-3. Used `ls -l` to inspect its permissions. The `s` in `-rwsr-x---` indicates the setuid bit is enabled.
-4. Executed `./bandit20-do` without arguments to learn how to use it.
-5. Ran `./bandit20-do whoami`, which returned `bandit20`. This confirmed that the program executes commands as the `bandit20` user.
-6. Tried to list `/etc/bandit_pass/` and change directories using the binary. The directory listing attempt failed because the path itself was a directory, and `cd` failed because it is a shell built-in rather than a standalone executable.
-7. Ran `./bandit20-do cat /etc/bandit_pass/bandit20` to read the password for the next level.
+The password was displayed in the terminal. I have intentionally excluded it from this write-up.
 
-## Key Learning
+## 7. Key Learnings
 
-- **`file`** identifies a file's type.
-- **`ls -l`** displays file permissions and ownership.
-- **setuid** allows an executable to run with the effective user ID of its owner, subject to system rules.
-- **`./bandit20-do command`** runs a command using the permissions provided by the setuid program.
-- **`whoami`** shows the effective user identity for this execution.
-- **`cat`** reads file contents.
-- **`cd`** is a shell built-in, so it cannot be executed like a normal external program through this binary.
+- **`file`:** Identifies a file's type.
+- **`ls -l`:** Displays file permissions, ownership, and other details.
+- **Setuid:** Allows an executable to run with the effective user ID of its owner, subject to system rules.
+- **`./bandit20-do command`:** Uses the provided executable to run a command with its configured privileges.
+- **`whoami`:** Displays the effective username for the command's execution context.
+- **`cat`:** Reads and displays file contents.
+- **`cd`:** A shell built-in that changes the current shell's working directory; it cannot normally be invoked as an independent executable.
+- **Effective user ID (EUID):** The identity the operating system generally uses when checking a process's permissions.
 
-## Next Level Login
+## 8. Next Level Login
 
-- Username: `bandit20`
-- SSH host: `bandit.labs.overthewire.org`
-- Port: `2220`
+After retrieving the password, the next step is to connect as `bandit20`:
 
-## Note
+```bash
+ssh -p 2220 bandit20@bandit.labs.overthewire.org
+```
 
-The important concept in this level is **setuid privilege**: the executable lets you run commands as its owner, `bandit20`. Never run unfamiliar setuid binaries on a system you do not own or have permission to test.
+Enter the password obtained from `/etc/bandit_pass/bandit20` when prompted.
 
-Do not include passwords in public repositories.
+## 9. References
+
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [`file` manual](https://man7.org/linux/man-pages/man1/file.1.html)
+- [`ls` manual](https://man7.org/linux/man-pages/man1/ls.1.html)
+- [`chmod` and file permissions](https://man7.org/linux/man-pages/man1/chmod.1.html)
+- [`cat` manual](https://man7.org/linux/man-pages/man1/cat.1.html)
+
+**Security note:** Setuid executables can introduce serious security risks when poorly designed. Only inspect or execute them on systems where you have authorization. Never commit passwords or private credentials to a public repository.

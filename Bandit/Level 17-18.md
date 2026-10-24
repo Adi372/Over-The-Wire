@@ -1,36 +1,84 @@
-# Bandit Level 17 → 18
+# Bandit Level 17 → Level 18
 
-## Level Goal
+## Challenge Information
 
-There are two files in the home directory: `passwords.old` and `passwords.new`. The password for the next level is the only line that changed between these files.
+- **Platform:** OverTheWire Bandit
+- **Category:** Linux, File Comparison, SSH
+- **Difficulty:** Beginner
+- **Tools Used:** `diff`, SSH
+- **Objective:** Find the password for `bandit18` by identifying the only line that differs between `passwords.old` and `passwords.new`.
 
-## Commands Used
+## 1. Challenge Description
+
+The home directory contains two files:
+
+- `passwords.old`
+- `passwords.new`
+
+The password for the next level is the only line that changed between these files. The task is to compare them and identify the correct password.
+
+## 2. Comparing the Files
+
+After connecting to `bandit17` using the private SSH key obtained in the previous level, I ran:
 
 ```bash
 diff passwords.new passwords.old
+```
+
+The `diff` command compares two files line by line and displays their differences.
+
+### Understanding the output
+
+For this command:
+
+- `<` indicates a line from the **first file**, `passwords.new`.
+- `>` indicates a line from the **second file**, `passwords.old`.
+
+The order of the filenames matters because `diff` uses it to determine which lines belong to each file.
+
+I identified the changed line from `passwords.new` and used it as the password for `bandit18`. The actual password is omitted from this write-up.
+
+## 3. Attempting to Log In to bandit18
+
+I exited the current session:
+
+```bash
 exit
+```
+
+Then I attempted to connect to the next account:
+
+```bash
 ssh -p 2220 bandit18@bandit.labs.overthewire.org
 ```
 
-## Steps
+After authentication, the server displayed:
 
-1. Connected to Bandit Level 17 using the SSH private key saved from the previous level.
-2. Ran `diff passwords.new passwords.old` to compare the two files.
-3. Identified the changed line. The line marked with `<` came from `passwords.new`, while the line marked with `>` came from `passwords.old`.
-4. Used the changed line from `passwords.new` as the password for Bandit Level 18.
-5. Exited the Level 17 session and attempted to log in to Bandit Level 18 using SSH.
-6. The connection displayed `Byebye!` and closed automatically.
+```text
+Byebye!
+```
 
-## Key Learning
+The connection then closed automatically.
 
-- **`diff`** compares two files and displays their differences.
-- **`<`** indicates a line from the first file specified in the command.
-- **`>`** indicates a line from the second file specified in the command.
-- The order of filenames matters when interpreting `diff` output.
-- A successful password discovery does not guarantee that the next SSH session will remain open.
+## 4. Understanding the `Byebye!` Message
 
-## Note
+This behavior is expected in this challenge. The `bandit18` account is configured to close normal interactive SSH sessions, so successfully authenticating does not mean that a regular shell will remain available.
 
-The `Byebye!` message is expected for this level transition. Bandit Level 18 restricts normal SSH login sessions, so the next challenge involves understanding how the remote shell behaves.
+The next challenge requires understanding how SSH can execute a command remotely, rather than relying on a normal interactive shell.
 
-Do not publish passwords or private keys in a public repository.
+## 5. Key Learnings
+
+- **`diff`:** Compares files line by line and displays differences.
+- **`<`:** Identifies a differing line from the first file supplied to `diff`.
+- **`>`:** Identifies a differing line from the second file supplied to `diff`.
+- **Filename order:** Determines how the differences are presented.
+- **`exit`:** Ends the current shell session.
+- **SSH authentication vs. shell access:** Authentication can succeed even when the server is configured to terminate an interactive session.
+
+## 6. References
+
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [`diff` manual](https://man7.org/linux/man-pages/man1/diff.1.html)
+- [`ssh` manual](https://man7.org/linux/man-pages/man1/ssh.1.html)
+
+**Security note:** Keep passwords and private SSH keys out of public repositories. Never include actual credentials in a public write-up.
